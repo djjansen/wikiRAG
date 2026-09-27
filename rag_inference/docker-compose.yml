@@ -1,0 +1,19 @@
+# Local test environment.
+#   Real Bedrock:   docker compose up --build
+#   Mock (no AWS):  set RAG_MOCK=true first, then docker compose up --build
+#                   PowerShell: $env:RAG_MOCK="true"; docker compose up --build
+# Then open http://localhost:8080 (set HOST_PORT to change it)
+services:
+  web:
+    build: .
+    ports:
+      - "${HOST_PORT:-8080}:8000"
+    environment:
+      AWS_REGION: us-east-2
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+      KNOWLEDGE_BASE_ID: ${KNOWLEDGE_BASE_ID:-7OP7AGPVXP}
+      MODEL_ARN: ${MODEL_ARN:-us.amazon.nova-pro-v1:0}
+      RAG_MOCK: ${RAG_MOCK:-false}
+    volumes:
+      # Reuses your local AWS credentials, read-only. On ECS the task role supplies credentials instead.
+      - ${USERPROFILE:-${HOME}}/.aws:/home/app/.aws:ro

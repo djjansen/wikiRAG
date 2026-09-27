@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["bedrock:RetrieveAndGenerate", "bedrock:Retrieve"],
+      "Resource": "arn:aws:bedrock:us-east-2:<ACCOUNT_ID>:knowledge-base/7OP7AGPVXP"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:GetInferenceProfile"],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
+        "arn:aws:bedrock:*:<ACCOUNT_ID>:inference-profile/us.amazon.nova-pro-v1:0"
+      ]
+    }
+  ]
+}

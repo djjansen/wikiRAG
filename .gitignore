@@ -1,1 +1,3 @@
-wiki_extractor/files/
+wiki_extract/files/
+__pycache__/.venv/
+.pytest_cache/

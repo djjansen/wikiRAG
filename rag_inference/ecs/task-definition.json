@@ -1,0 +1,38 @@
+{
+  "family": "wikirag",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/wikirag-task-role",
+  "containerDefinitions": [
+    {
+      "name": "wikirag",
+      "image": "<ACCOUNT_ID>.dkr.ecr.us-east-2.amazonaws.com/wikirag:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "AWS_REGION", "value": "us-east-2" },
+        { "name": "KNOWLEDGE_BASE_ID", "value": "7OP7AGPVXP" },
+        { "name": "MODEL_ARN", "value": "us.amazon.nova-pro-v1:0" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wikirag",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "web",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}
