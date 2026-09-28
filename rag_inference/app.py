@@ -25,7 +25,11 @@ SESSION_COOKIE = "wikirag_session"
 SESSION_MAX_AGE = 7 * 24 * 3600
 # Paths reachable without logging in.
 PUBLIC_PATHS = {"/login", "/health"}
-indexed_articles = ["https://en.wikipedia.org/wiki/2018_Iraqi_parliamentary_election", "https://en.wikipedia.org/wiki/St._Louis_Blues"]
+indexed_articles = ["https://en.wikipedia.org/wiki/2018_Iraqi_parliamentary_election", 
+                    "https://en.wikipedia.org/wiki/St._Louis_Blues",
+                    "https://en.wikipedia.org/wiki/Saterland_Frisian_language",
+                    "https://en.wikipedia.org/wiki/Peregrine_falcon",
+                    "https://en.wikipedia.org/wiki/Transformer_(deep_learning)"
 
 if not APP_PASSWORD:
     log.warning("APP_PASSWORD is not set, so nobody can log in.")

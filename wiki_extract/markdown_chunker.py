@@ -63,4 +63,4 @@ def chunk_md_file(file):
         utils.s3.upload_to_s3(chunk_name, 'djj-wiki-rag', f'files/chunked/{base_filename}-{i}')
 
 
-chunk_md_file('wiki_extract/files/raw/2018Iraqiparliamentaryelection.md')
+chunk_md_file('wiki_extract/files/raw/SaterlandFrisianlanguage.md')
