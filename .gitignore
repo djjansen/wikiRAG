@@ -1,5 +1,5 @@
 wiki_extract/files/
 __pycache__/.venv/
 .pytest_cache/
-rag_inference/ecs/task-definition.json
-rag_inference/ecs/task-role-policy.json
+
+cloudflared.exe service install eyJhIjoiY2Y4NTY4ZWZhODUyNmQxYzdlOWZmNGM4YTNlYWYxOTYiLCJ0IjoiYmMzMTYwZjYtNDEwNS00OTVhLWE4ZjAtNzA3ZTE5MDBkZDIzIiwicyI6Ik5EYzNOVEEwT0dVdE0yRTJPUzAwTldJeExUazVOMlF0TmpJd05EYzJaVGN4TnpjeU9URmxNRGRoTkRndFl6azVZaTAwWkdJd0xUbGtZbVl0TTJVMFpUZGxPV05pWVdGaCJ9

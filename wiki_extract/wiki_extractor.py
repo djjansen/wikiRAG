@@ -3,6 +3,7 @@ import requests
 from markdownify import markdownify as md
 import re
 import boto3
+from utils import s3
 
 
 def collect_wiki_markdown(wikipage_title):
@@ -25,10 +26,10 @@ def collect_wiki_markdown(wikipage_title):
     return markdown_text
 
 
-title = "St. Louis Blues"
+title = "2018 Iraqi parliamentary election"
 md_text = collect_wiki_markdown(title)
 clean_title = re.sub('[\W]+', '', title, count=0, flags=0)
 filename = f"{clean_title}.md"
 full_path = f"wikiRAG/wiki_extract/files/raw/{filename}"
-write_markdown_file(md_text, full_path)
-upload_to_s3(full_path, 'djj-wiki-rag', f'files/raw/{filename}')
+s3.write_markdown_file(md_text, full_path)
+s3.upload_to_s3(full_path, 'djj-wiki-rag', f'files/raw/{filename}')

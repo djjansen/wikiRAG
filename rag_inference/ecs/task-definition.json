@@ -17,6 +17,9 @@
         { "name": "KNOWLEDGE_BASE_ID", "value": "7OP7AGPVXP" },
         { "name": "MODEL_ARN", "value": "us.amazon.nova-pro-v1:0" }
       ],
+      "secrets": [
+        { "name": "APP_PASSWORD", "valueFrom": "/wikirag/app-password" }
+      ],
       "healthCheck": {
         "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"],
         "interval": 30,
@@ -31,6 +34,24 @@
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "web",
           "awslogs-create-group": "true"
+        }
+      }
+    },
+    {
+      "name": "cloudflared",
+      "image": "cloudflare/cloudflared:latest",
+      "essential": true,
+      "command": ["tunnel", "--no-autoupdate", "run"],
+      "secrets": [
+        { "name": "TUNNEL_TOKEN", "valueFrom": "/wikirag/cloudflared-token" }
+      ],
+      "dependsOn": [{ "containerName": "wikirag", "condition": "HEALTHY" }],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wikirag",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "cloudflared"
         }
       }
     }

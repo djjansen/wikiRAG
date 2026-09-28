@@ -14,6 +14,8 @@ services:
       KNOWLEDGE_BASE_ID: ${KNOWLEDGE_BASE_ID:-7OP7AGPVXP}
       MODEL_ARN: ${MODEL_ARN:-us.amazon.nova-pro-v1:0}
       RAG_MOCK: ${RAG_MOCK:-false}
+      # Login password. Set it in your shell first, e.g. PowerShell: $env:APP_PASSWORD="..."
+      APP_PASSWORD: ${APP_PASSWORD:-}
     volumes:
       # Reuses your local AWS credentials, read-only. On ECS the task role supplies credentials instead.
       - ${USERPROFILE:-${HOME}}/.aws:/home/app/.aws:ro

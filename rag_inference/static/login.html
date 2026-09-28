@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wikiRAG · Log in</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#1d2330; --muted:#667085; --accent:#002f87; --border:#dde1e7; --err:#b42318; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#12151b; --card:#1b1f27; --text:#e6e8ec; --muted:#98a2b3; --accent:#7aa2ff; --border:#2c323d; --err:#f97066; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 380px; margin: 0 auto; padding: 96px 16px; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .sub { margin: 0 0 24px; color: var(--muted); }
+    .card { padding:20px; background:var(--card); border:1px solid var(--border); border-radius:10px; }
+    label { display:block; font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    input { width:100%; padding:10px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--border); border-radius:8px; }
+    button { width:100%; margin-top:12px; padding:10px 20px; font:inherit; font-weight:600; color:#fff; background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
+    @media (prefers-color-scheme: dark) { button { color:#12151b; } }
+    button:disabled { opacity:.6; cursor:progress; }
+    .error { margin:10px 0 0; color: var(--err); font-size:.9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>wikiRAG</h1>
+  <p class="sub">Enter the password to continue.</p>
+
+  <form id="login-form" class="card">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required autofocus>
+    <button id="submit" type="submit">Log in</button>
+    <p id="error" class="error" hidden></p>
+  </form>
+</main>
+
+<script>
+  const form = document.getElementById("login-form");
+  const input = document.getElementById("password");
+  const button = document.getElementById("submit");
+  const error = document.getElementById("error");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    button.disabled = true;
+    error.hidden = true;
+    try {
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: input.value }),
+      });
+      if (res.ok) {
+        location.replace("/");
+        return;
+      }
+      error.textContent = res.status === 401 ? "Incorrect password." : `Login failed (${res.status}).`;
+    } catch {
+      error.textContent = "Could not reach the server.";
+    }
+    error.hidden = false;
+    input.select();
+    button.disabled = false;
+  });
+</script>
+</body>
+</html>
