@@ -30,6 +30,7 @@ indexed_articles = ["https://en.wikipedia.org/wiki/2018_Iraqi_parliamentary_elec
                     "https://en.wikipedia.org/wiki/Saterland_Frisian_language",
                     "https://en.wikipedia.org/wiki/Peregrine_falcon",
                     "https://en.wikipedia.org/wiki/Transformer_(deep_learning)"
+]
 
 if not APP_PASSWORD:
     log.warning("APP_PASSWORD is not set, so nobody can log in.")
