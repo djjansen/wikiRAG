@@ -2,3 +2,4 @@ wiki_extract/files/
 __pycache__/.venv/
 .pytest_cache/
 *.ipynb
+*.pyc
