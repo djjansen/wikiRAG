@@ -38,7 +38,7 @@ def collect_wiki_markdown(wikipage_title):
     return f"# {parsed['title']}\n\n{markdown_text}\n"
 
 
-title = "2018 Iraqi parliamentary election"
+title = "Transformer (deep learning)"
 md_text = collect_wiki_markdown(title)
 clean_title = re.sub(r'[\W]+','', title, count=0, flags=0)
 filename = f"{clean_title}.md"

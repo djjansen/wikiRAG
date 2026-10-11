@@ -4,7 +4,7 @@
     {
       "Effect": "Allow",
       "Action": ["bedrock:RetrieveAndGenerate", "bedrock:Retrieve"],
-      "Resource": "arn:aws:bedrock:us-east-2:<ACCOUNT_ID>:knowledge-base/7OP7AGPVXP"
+      "Resource": "arn:aws:bedrock:us-east-2:<ACCOUNT_ID>:knowledge-base/9UOJMBMQRX"
     },
     {
       "Effect": "Allow",
@@ -13,6 +13,11 @@
         "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
         "arn:aws:bedrock:*:<ACCOUNT_ID>:inference-profile/us.amazon.nova-pro-v1:0"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::djj-wiki-rag/*/parents/*"
     }
   ]
 }

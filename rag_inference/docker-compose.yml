@@ -11,7 +11,7 @@ services:
     environment:
       AWS_REGION: us-east-2
       AWS_PROFILE: ${AWS_PROFILE:-default}
-      KNOWLEDGE_BASE_ID: ${KNOWLEDGE_BASE_ID:-7OP7AGPVXP}
+      KNOWLEDGE_BASE_ID: ${KNOWLEDGE_BASE_ID:-9UOJMBMQRX}
       MODEL_ARN: ${MODEL_ARN:-us.amazon.nova-pro-v1:0}
       RAG_MOCK: ${RAG_MOCK:-false}
       # Login password. Set it in your shell first, e.g. PowerShell: $env:APP_PASSWORD="..."

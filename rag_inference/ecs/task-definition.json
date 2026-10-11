@@ -14,7 +14,7 @@
       "portMappings": [{ "containerPort": 8000, "protocol": "tcp" }],
       "environment": [
         { "name": "AWS_REGION", "value": "us-east-2" },
-        { "name": "KNOWLEDGE_BASE_ID", "value": "7OP7AGPVXP" },
+        { "name": "KNOWLEDGE_BASE_ID", "value": "9UOJMBMQRX" },
         { "name": "MODEL_ARN", "value": "us.amazon.nova-pro-v1:0" }
       ],
       "secrets": [

@@ -29,12 +29,12 @@
     .label { font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
     .question { font-weight:600; margin-bottom:18px; }
     .answer { white-space: pre-wrap; }
+    .answer a.marker { color:var(--accent); text-decoration:none; font-size:.8em; vertical-align:super; line-height:0; }
+    .answer a.marker:hover { text-decoration:underline; }
     .citations { margin-top:18px; }
-    details { border-top:1px solid var(--border); }
-    summary { padding:8px 0; cursor:pointer; color:var(--muted); font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    summary .num { font-weight:700; color:var(--text); margin-right:6px; }
-    .cite-text { margin:0 0 12px; padding:10px 12px; max-height:320px; overflow:auto; white-space:pre-wrap; font-size:.85rem;
-                 background:var(--bg); border-radius:8px; }
+    .cite { padding:8px 0; border-top:1px solid var(--border); font-size:.9rem; }
+    .cite .num { font-weight:700; margin-right:6px; }
+    .cite-quote { margin:4px 0 0; color:var(--muted); font-style:italic; }
     .error { color: var(--err); }
   </style>
 </head>
@@ -122,20 +122,21 @@
       const data = await res.json();
       if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Request failed (${res.status})`);
 
-      aOut.textContent = data.answer;
-      // One collapsed <details> per citation; the number matches the [n] markers in the answer.
+      renderAnswer(data.answer, data.citations);
+      // One row per citation: the section link, plus the quoted span it highlights.
       for (const c of data.citations) {
-        const item = document.createElement("details");
-        const summary = document.createElement("summary");
+        const item = document.createElement("div");
+        item.className = "cite";
         const num = document.createElement("span");
         num.className = "num";
         num.textContent = `[${c.number}]`;
-        // Preview the start of the cited text; CSS truncates it to one line.
-        summary.append(num, c.text.replace(/\s+/g, " ").trim().slice(0, 200));
-        const text = document.createElement("p");
-        text.className = "cite-text";
-        text.textContent = c.text;
-        item.append(summary, text);
+        item.append(num, citationLink(c, c.label || c.source));
+        if (c.quote) {
+          const quote = document.createElement("p");
+          quote.className = "cite-quote";
+          quote.textContent = `“${c.quote}”`;
+          item.append(quote);
+        }
         citations.appendChild(item);
       }
       citations.hidden = data.citations.length === 0;
@@ -147,6 +148,38 @@
       button.textContent = "Ask";
     }
   });
+
+  // A link to the cited span of the Wikipedia article (plain text if there is no url).
+  function citationLink(c, text) {
+    if (!c.url) {
+      const span = document.createElement("span");
+      span.textContent = text;
+      return span;
+    }
+    const a = document.createElement("a");
+    a.href = c.url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = text;
+    if (c.quote) a.title = c.quote;
+    return a;
+  }
+
+  // Turn each [n] marker in the answer into a link to citation n; everything else stays plain text.
+  function renderAnswer(answer, cites) {
+    const byNumber = new Map(cites.map((c) => [c.number, c]));
+    aOut.replaceChildren();
+    let last = 0;
+    for (const m of answer.matchAll(/\[(\d+)\]/g)) {
+      const c = byNumber.get(Number(m[1]));
+      if (!c) continue;
+      const link = citationLink(c, m[0]);
+      link.classList.add("marker");
+      aOut.append(answer.slice(last, m.index), link);
+      last = m.index + m[0].length;
+    }
+    aOut.append(answer.slice(last));
+  }
 </script>
 </body>
 </html>

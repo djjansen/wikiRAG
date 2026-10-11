@@ -15,7 +15,7 @@ A FastAPI backend wraps the Bedrock Knowledge Base query in `rag.py` and serves 
 
 Everything except `/login` and `/health` requires logging in with the shared password in `APP_PASSWORD`. If `APP_PASSWORD` is unset, nobody can log in.
 
-Configuration comes from environment variables: `APP_PASSWORD`, `AWS_REGION`, `KNOWLEDGE_BASE_ID`, `MODEL_ARN`, `NUM_RESULTS`, and `RAG_MOCK` (set to `true` to return canned answers without calling AWS).
+Configuration comes from environment variables: `APP_PASSWORD`, `AWS_REGION`, `KNOWLEDGE_BASE_ID`, `MODEL_ARN`, `NUM_RESULTS` (child chunks retrieved), `MAX_PARENTS` (sections/tables sent to the model), and `RAG_MOCK` (set to `true` to return canned answers without calling AWS).
 
 ### Run locally
 
