@@ -37,23 +37,28 @@ def chunk_md_file(file):
     # 4. Extract plain text content and metadata
     chunk_texts = [chunk.page_content for chunk in final_chunks]
     # combine sub-sections immediately following sections
+    # a "## " chunk is held until we see the next chunk: if that chunk is a "### "
+    # subsection they are merged, otherwise the section is emitted on its own
     processed_chunks = []
 
-    curr_section = None
-    curr_content = None
-    for i, chunk in enumerate(chunk_texts):
-        prefix = chunk[:3]
-        if prefix == "## ":
-            curr_section = i
-            curr_content = chunk
-        elif curr_content:
-            if prefix == "###":
-                if curr_section == i-1:
-                    processed_chunks.append(curr_content+chunk)
-                    curr_content = None
-                    
+    pending_section = None
+    for chunk in chunk_texts:
+        if pending_section is not None:
+            if chunk.startswith("### "):
+                processed_chunks.append(pending_section + "\n\n" + chunk)
+                pending_section = None
+                continue
+            processed_chunks.append(pending_section)
+            pending_section = None
+
+        if chunk.startswith("## "):
+            pending_section = chunk
         else:
             processed_chunks.append(chunk)
+
+    # flush a trailing section that had nothing after it
+    if pending_section is not None:
+        processed_chunks.append(pending_section)
 
 
     for i, chunk in enumerate(processed_chunks):
