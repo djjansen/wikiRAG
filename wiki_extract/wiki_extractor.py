@@ -23,7 +23,7 @@ def collect_wiki_markdown(wikipage_title):
     response = requests.get(url=URL, params=PARAMS, headers=headers)
     response.raise_for_status()
     # Pull the page HTML out of the JSON response rather than converting the raw
-    # response body, which leaves JSON escapes (\n, ä, \") in the text
+    # response body, which leaves JSON escapes (\n, \u00e4, \") in the text
     parsed = response.json()["parse"]
     html_content = parsed["text"]
     # Convert HTML string straight into structured Markdown
@@ -33,7 +33,7 @@ def collect_wiki_markdown(wikipage_title):
                        escape_underscores=False, escape_asterisks=False)
     # Wikipedia uses non-breaking/thin spaces (e.g. "2,000\xa0(2015)"); the chunker's header
     # splitter drops non-printable characters, which would glue those words together
-    markdown_text = re.sub(r"[  -   　]", " ", markdown_text)
+    markdown_text = re.sub(r"[\u00a0\u2000-\u200a\u202f\u205f\u3000]", " ", markdown_text)
     markdown_text = re.sub(r"\n{3,}", "\n\n", markdown_text).strip()
 
     # Page title as a top-level header so the chunker can use it as context
@@ -42,8 +42,6 @@ def collect_wiki_markdown(wikipage_title):
 
 title = "Saterland Frisian language"
 md_text = collect_wiki_markdown(title)
-clean_title = re.sub('[\W]+', '', title, count=0, flags=0)
+clean_title = re.sub(r'[\W]+','', title, count=0, flags=0)
 filename = f"{clean_title}.md"
-full_path = f"wiki_extract/files/raw/{filename}"
-s3.write_markdown_file(md_text, full_path)
-s3.upload_to_s3(full_path, 'djj-wiki-rag', f'files/raw/{filename}')
+s3.write_and_upload(md_text, 'raw', filename)

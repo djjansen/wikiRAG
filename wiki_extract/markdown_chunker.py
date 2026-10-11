@@ -7,8 +7,6 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharac
 from sentence_transformers import SentenceTransformer
 import utils.s3
 
-BUCKET = 'djj-wiki-rag'
-
 # small child chunks are what get embedded and retrieved
 CHILD_CHUNK_SIZE = 800
 CHILD_CHUNK_OVERLAP = 100
@@ -161,12 +159,6 @@ def build_parents(md_header_splits, title, text_splitter):
     return parents
 
 
-def write_and_upload(text, name, folder):
-    local_path = f'wiki_extract/files/{folder}/{name}'
-    utils.s3.write_markdown_file(text, local_path)
-    utils.s3.upload_to_s3(local_path, BUCKET, f'files/{folder}/{name}')
-
-
 def chunk_md_file(file):
     # 1. Define the Markdown headers to split on
     headers_to_split_on = [
@@ -203,22 +195,19 @@ def chunk_md_file(file):
     )
     parents = build_parents(md_header_splits, title, text_splitter)
 
-    os.makedirs('wiki_extract/files/chunked', exist_ok=True)
-    os.makedirs('wiki_extract/files/parents', exist_ok=True)
-
-    # 4. Write parents to files/parents/ and children (plus a Bedrock metadata sidecar
-    # pointing back at their parent) to files/chunked/
+    # 4. Write parents to {version}/parents/ and children (plus a Bedrock metadata sidecar
+    # pointing back at their parent) to {version}/chunked/
     child_index = 0
     for parent_index, parent in enumerate(parents):
         parent_name = f'{base_filename}-p{parent_index}'
-        write_and_upload(parent['text'], parent_name, 'parents')
+        utils.s3.write_and_upload(parent['text'], 'parents', parent_name)
 
         for piece, headers in parent['pieces']:
             metadata = {
                 'source_file': base_filename,
                 'title': title,
                 'parent_id': parent_name,
-                'parent_key': f'files/parents/{parent_name}',
+                'parent_key': utils.s3.s3_key('parents', parent_name),
                 'parent_level': parent['level'],
                 'chunk_index': child_index,
             }
@@ -230,10 +219,10 @@ def chunk_md_file(file):
             # prefix each child with where it sits in the page, since a small chunk
             # often doesn't name its own subject
             chunk_name = f'{base_filename}-{child_index}'
-            write_and_upload(f'{get_breadcrumb(title, headers)}\n\n{piece}', chunk_name, 'chunked')
-            write_and_upload(json.dumps({'metadataAttributes': metadata}, ensure_ascii=False),
-                             f'{chunk_name}.metadata.json', 'chunked')
+            utils.s3.write_and_upload(f'{get_breadcrumb(title, headers)}\n\n{piece}', 'chunked', chunk_name)
+            utils.s3.write_and_upload(json.dumps({'metadataAttributes': metadata}, ensure_ascii=False),
+                                      'chunked', f'{chunk_name}.metadata.json')
             child_index += 1
 
 
-chunk_md_file('wiki_extract/files/raw/SaterlandFrisianlanguage.md')
+chunk_md_file(utils.s3.local_path('raw', 'SaterlandFrisianlanguage.md'))
