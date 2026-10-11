@@ -1,8 +1,6 @@
-from bs4 import BeautifulSoup
 import requests
 from markdownify import markdownify as md
 import re
-import boto3
 from utils import s3
 
 
@@ -40,7 +38,7 @@ def collect_wiki_markdown(wikipage_title):
     return f"# {parsed['title']}\n\n{markdown_text}\n"
 
 
-title = "Saterland Frisian language"
+title = "2018 Iraqi parliamentary election"
 md_text = collect_wiki_markdown(title)
 clean_title = re.sub(r'[\W]+','', title, count=0, flags=0)
 filename = f"{clean_title}.md"
