@@ -119,8 +119,10 @@
         location.replace("/login");
         return;
       }
-      const data = await res.json();
+      // Error pages from a proxy (e.g. Cloudflare) can be HTML rather than JSON.
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Request failed (${res.status})`);
+      if (!data.answer) throw new Error("The server returned an unexpected response.");
 
       renderAnswer(data.answer, data.citations);
       // One row per citation: the section link, plus the quoted span it highlights.

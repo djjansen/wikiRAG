@@ -1,8 +1,14 @@
 from ragas.metrics.collections import Faithfulness, AnswerRelevancy, AnswerCorrectness
 from utils import llm
+from utils.s3 import DATA_VERSION
 from rag_inference import rag
 import pandas as pd
 from tqdm import tqdm
+
+
+def results_path(metric: str) -> str:
+    # tag results with the data version so runs against different chunkings sit side by side
+    return f'rag_eval/files/{metric}_{DATA_VERSION}.csv'
 
 # Create metric
 faithfulness_scorer = Faithfulness(llm=llm.instructor_llm)
@@ -64,11 +70,11 @@ def run_metric(eval_df: pd.DataFrame, scorer, metric: str, user_input_col='user_
     return eval_df
 
 faithful_df = run_metric(eval_df, faithfulness_scorer, 'faithfulness')
-faithful_df.to_csv('rag_eval/files/faithfulness.csv')
+faithful_df.to_csv(results_path('faithfulness'))
 
 # relevance_df = run_metric(eval_df, relevancy_scorer, 'relevancy')
-# relevance_df.to_csv('rag_eval/files/relevance.csv')
+# relevance_df.to_csv(results_path('relevance'))
 
 # correctness_df = run_metric(eval_df, correctness_scorer, 'correctness',
 #                             answer_col='reference', context_col='reference_contexts')
-# correctness_df.to_csv('rag_eval/files/correctness.csv')
+# correctness_df.to_csv(results_path('correctness'))
