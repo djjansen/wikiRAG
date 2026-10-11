@@ -68,12 +68,12 @@ def run_metric(eval_df: pd.DataFrame, scorer, metric: str, user_input_col='user_
 
     return eval_df
 
-# faithful_df = run_metric(eval_df, faithfulness_scorer, 'faithfulness')
-# faithful_df.to_csv('rag_eval/files/faithfulness.csv')
+faithful_df = run_metric(eval_df, faithfulness_scorer, 'faithfulness')
+faithful_df.to_csv('rag_eval/files/faithfulness.csv')
 
 # relevance_df = run_metric(eval_df, relevancy_scorer, 'relevancy')
 # relevance_df.to_csv('rag_eval/files/relevance.csv')
 
-correctness_df = run_metric(eval_df, correctness_scorer, 'correctness',
-                            answer_col='reference', context_col='reference_contexts')
-correctness_df.to_csv('rag_eval/files/correctness.csv')
+# correctness_df = run_metric(eval_df, correctness_scorer, 'correctness',
+#                             answer_col='reference', context_col='reference_contexts')
+# correctness_df.to_csv('rag_eval/files/correctness.csv')
