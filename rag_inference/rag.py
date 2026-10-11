@@ -22,7 +22,10 @@ MAX_PARENTS = int(os.getenv("MAX_PARENTS", "5"))
 RAG_MOCK = os.getenv("RAG_MOCK", "false").lower() in ("1", "true", "yes")
 
 RAG_SYSTEM_PROMPT = """You answer questions about Wikipedia articles using only the sources provided.
+Write the answer in your own words, as complete sentences.
 After each claim, cite the source that supports it as its label followed by a short exact quote of the supporting words, copied verbatim from that source, in square brackets, e.g. [S1 "won the Stanley Cup in 2019"]. Cite several sources with several brackets, e.g. [S1 "..."][S3 "..."].
+The quotes are only used to link to the source and are never shown to the reader, so the answer must make sense without them. For example:
+The Blues won their first Stanley Cup in 2019. [S1 "won the Stanley Cup in 2019"]
 Do not copy footnote numbers such as [12] from the sources into your answer.
 If the sources do not contain the answer, say so rather than guessing."""
 GENERATION_TEMPERATURE = 0.2
@@ -164,14 +167,16 @@ def _number_citations(answer: str, parents: list[dict]) -> tuple[str, list[dict]
     numbers = {}  # (index into parents, quote) -> citation number
     citations = []
 
-    def renumber(match):
+    def renumber(match, show_quotes=False):
         refs = []
+        shown = []  # "quote [n]" pieces, used when the model answered only in quotes
         for label, quoted in CITATION_PART.findall(match.group(2)):
             index = int(label) - 1
             # skip labels for sources that don't exist
             if not 0 <= index < len(parents):
                 continue
             quoted = " ".join(quoted.replace("*", "").split())
+            written = quoted
             # only keep a quote that really is in the source; otherwise just link the section
             if quoted and _normalize(quoted) not in normalized_sources[index]:
                 quoted = ""
@@ -188,13 +193,21 @@ def _number_citations(answer: str, parents: list[dict]) -> tuple[str, list[dict]
                 })
             if numbers[key] not in refs:
                 refs.append(numbers[key])
+            if written:
+                shown.append(f"{written} [{numbers[key]}]")
+        if show_quotes and shown:
+            return (match.group(1) or " ") + " ".join(shown)
         # keep the whitespace before the marker, unless every label in it was dropped
         return match.group(1) + "".join(f"[{n}]" for n in refs) if refs else ""
 
-    answer = CITATION_MARKER.sub(renumber, answer)
+    cited = CITATION_MARKER.sub(renumber, answer)
+    # The model sometimes answers only in quotes, which would leave nothing but [n] markers.
+    # Show the quotes in that case (numbers are already assigned, so they come out the same)
+    if not re.sub(r"\[\d+\]", "", cited).strip(" .\n"):
+        cited = CITATION_MARKER.sub(lambda match: renumber(match, show_quotes=True), answer).strip()
     # adjacent citations that resolved to the same source and quote, e.g. [1][1]
-    answer = re.sub(r"(\[\d+\])(?:\1)+", r"\1", answer)
-    return answer, citations
+    cited = re.sub(r"(\[\d+\])(?:\1)+", r"\1", cited)
+    return cited, citations
 
 
 def bedrock_rag(question: str) -> dict:

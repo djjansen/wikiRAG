@@ -125,6 +125,16 @@ def test_citations_link_to_quoted_spans(fakes):
     ]
 
 
+def test_answer_made_only_of_quotes_keeps_the_quotes(fakes):
+    fakes([_child(1, "v2/parents/StLouisBlues.md-p3")],
+          '[S1 "The Blues won the Stanley Cup in 2019"][S1 "their first championship"]')
+
+    result = rag.bedrock_rag("q")
+
+    assert result["answer"] == "The Blues won the Stanley Cup in 2019 [1] their first championship [2]"
+    assert [c["quote"] for c in result["citations"]] == ["The Blues won the Stanley Cup in 2019", "their first championship"]
+
+
 def test_long_quote_uses_start_and_end_of_text_fragment():
     assert rag._text_fragment("one two three four five six seven eight nine ten eleven twelve") == (
         "one%20two%20three%20four%20five,eight%20nine%20ten%20eleven%20twelve"

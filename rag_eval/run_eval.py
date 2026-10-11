@@ -45,9 +45,9 @@ def run_metric(eval_df: pd.DataFrame, scorer, metric: str, user_input_col='user_
             elif metric == 'correctness':
                 result = scorer.score(
                     user_input=query,
-                    response=ref,
-                    reference=answer
-                )                
+                    response=answer,  # the RAG answer being graded
+                    reference=ref     # the eval set's ground-truth answer
+                )
             else:
                 result = scorer.score(
                     user_input=query,
@@ -69,12 +69,12 @@ def run_metric(eval_df: pd.DataFrame, scorer, metric: str, user_input_col='user_
 
     return eval_df
 
-faithful_df = run_metric(eval_df, faithfulness_scorer, 'faithfulness')
-faithful_df.to_csv(results_path('faithfulness'))
+# faithful_df = run_metric(eval_df, faithfulness_scorer, 'faithfulness')
+# faithful_df.to_csv(results_path('faithfulness'))
 
 # relevance_df = run_metric(eval_df, relevancy_scorer, 'relevancy')
 # relevance_df.to_csv(results_path('relevance'))
 
-# correctness_df = run_metric(eval_df, correctness_scorer, 'correctness',
-#                             answer_col='reference', context_col='reference_contexts')
-# correctness_df.to_csv(results_path('correctness'))
+correctness_df = run_metric(eval_df, correctness_scorer, 'correctness',
+                            answer_col='reference', context_col='reference_contexts')
+correctness_df.to_csv(results_path('correctness'))
