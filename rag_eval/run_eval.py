@@ -1,5 +1,6 @@
 from ragas.metrics.collections import Faithfulness, AnswerRelevancy, AnswerCorrectness
 from utils import llm
+from rag_inference import rag
 import pandas as pd
 from tqdm import tqdm
 
@@ -18,20 +19,14 @@ def run_metric(eval_df: pd.DataFrame, scorer, metric: str, user_input_col='user_
 
     for idx, row in tqdm(eval_df.iterrows()):
         query = row[user_input_col]
-        response = llm.bedrock_rag(query)
-        answer = response["output"]["text"]
+        response = rag.bedrock_rag(query)
+        answer = response["answer"]
         if metric == 'correctness':
             ref = row[answer_col]
             retrieved_contexts = row[context_col]
         else:
-            retrieved_contexts = []
-            seen = set()
-            for citation in response.get("citations", []):
-                for ref in citation.get("retrievedReferences", []):
-                    text = ref.get("content", {}).get("text")
-                    if text and text not in seen:
-                        seen.add(text)
-                        retrieved_contexts.append(text)
+            # the parent sections/tables the model was given, which is what the answer should be faithful to
+            retrieved_contexts = response["contexts"]
 
         try:
             if metric == 'faithfulness':

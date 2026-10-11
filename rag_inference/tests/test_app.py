@@ -91,8 +91,17 @@ def test_articles_requires_login(anon):
     assert anon.get("/api/articles").status_code == 401
 
 
+CITATION = {
+    "number": 1,
+    "source": "s3://b/v2/parents/StLouisBlues.md-p3",
+    "label": "St. Louis Blues > History",
+    "url": "https://en.wikipedia.org/wiki/St._Louis_Blues#History:~:text=won%20in%202019",
+    "quote": "won in 2019",
+}
+
+
 def test_ask_returns_answer(client, monkeypatch):
-    citation = {"number": 1, "source": "s3://b/k", "text": "They won in 2019."}
+    citation = CITATION
     monkeypatch.setattr(rag, "ask", lambda q: {"answer": "Once, in 2019. [1]", "citations": [citation]})
     res = client.post("/api/ask", json={"question": "  How many cups?  "})
     assert res.status_code == 200
@@ -112,34 +121,7 @@ def test_ask_bedrock_error_returns_502(client, monkeypatch):
     assert client.post("/api/ask", json={"question": "hi"}).status_code == 502
 
 
-def _ref(uri, text):
-    return {"location": {"s3Location": {"uri": uri}}, "content": {"text": text}}
-
-
-def test_rag_numbers_citations_and_marks_answer(monkeypatch):
-    class FakeClient:
-        def retrieve_and_generate(self, **kwargs):
-            assert kwargs["input"] == {"text": "q"}
-            return {
-                "output": {"text": "They won in 2019. They lost in 1970."},
-                "citations": [
-                    {
-                        "generatedResponsePart": {"textResponsePart": {"text": "They won in 2019"}},
-                        "retrievedReferences": [_ref("s3://b/a", "chunk a"), _ref("s3://b/a", "chunk a")],
-                    },
-                    {
-                        "generatedResponsePart": {"textResponsePart": {"text": "They lost in 1970"}},
-                        "retrievedReferences": [_ref("s3://b/c", "chunk c"), _ref("s3://b/a", "chunk a")],
-                    },
-                ],
-            }
-
-    monkeypatch.setattr(rag, "RAG_MOCK", False)
-    monkeypatch.setattr(rag, "_client", lambda: FakeClient())
-    assert rag.ask("q") == {
-        "answer": "They won in 2019 [1]. They lost in 1970 [2][1].",
-        "citations": [
-            {"number": 1, "source": "s3://b/a", "text": "chunk a"},
-            {"number": 2, "source": "s3://b/c", "text": "chunk c"},
-        ],
-    }
+def test_rag_ask_returns_answer_and_citations_only(monkeypatch):
+    monkeypatch.setattr(rag, "bedrock_rag",
+                        lambda q: {"answer": "Once [1].", "citations": [CITATION], "contexts": ["whole section"]})
+    assert rag.ask("q") == {"answer": "Once [1].", "citations": [CITATION]}

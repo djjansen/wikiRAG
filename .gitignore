@@ -3,3 +3,4 @@ __pycache__/.venv/
 .pytest_cache/
 *.ipynb
 *.pyc
+*.cpython-312.pyc

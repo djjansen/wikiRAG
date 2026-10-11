@@ -64,7 +64,9 @@ class AskRequest(BaseModel):
 class Citation(BaseModel):
     number: int
     source: str
-    text: str
+    label: str  # e.g. "St. Louis Blues > History"
+    url: str  # Wikipedia section link, with a text fragment highlighting the quote when there is one
+    quote: str = ""
 
 
 class AskResponse(BaseModel):
