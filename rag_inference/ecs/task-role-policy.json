@@ -17,7 +17,16 @@
     {
       "Effect": "Allow",
       "Action": ["s3:GetObject"],
-      "Resource": "arn:aws:s3:::djj-wiki-rag/*/parents/*"
+      "Resource": [
+        "arn:aws:s3:::djj-wiki-rag/*/parents/*",
+        "arn:aws:s3:::djj-wiki-rag/eval/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::djj-wiki-rag",
+      "Condition": { "StringLike": { "s3:prefix": ["eval/*"] } }
     }
   ]
 }

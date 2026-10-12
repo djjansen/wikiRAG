@@ -12,9 +12,7 @@
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
     main { max-width: 760px; margin: 0 auto; padding: 48px 16px; }
-    header { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
     h1 { margin: 0 0 4px; font-size: 1.6rem; }
-    .logout { padding:0; font-size:.9rem; font-weight:400; color:var(--muted); background:none; text-decoration:underline; }
     .sub { margin: 0; color: var(--muted); }
     .articles { margin: 6px 0 24px; padding-left: 22px; color: var(--muted); }
     a { color: inherit; text-decoration-color: var(--border); text-underline-offset: 3px; }
@@ -36,14 +34,34 @@
     .cite .num { font-weight:700; margin-right:6px; }
     .cite-quote { margin:4px 0 0; color:var(--muted); font-style:italic; }
     .error { color: var(--err); }
+    /* Corner menu, shared with metrics.html */
+    .menu { position:fixed; top:16px; right:16px; z-index:10; }
+    .menu summary { list-style:none; display:grid; place-items:center; width:40px; height:40px; color:var(--muted);
+                    background:var(--card); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .menu summary::-webkit-details-marker { display:none; }
+    .menu summary:hover, .menu[open] summary { color:var(--text); }
+    .menu nav { position:absolute; top:46px; right:0; min-width:160px; padding:6px; background:var(--card);
+                border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgb(0 0 0 / .12); }
+    .menu nav a, .menu nav button { display:block; width:100%; padding:8px 10px; font:inherit; font-size:.95rem; font-weight:400;
+                                    text-align:left; color:var(--text); background:none; border:0; border-radius:6px; text-decoration:none; cursor:pointer; }
+    .menu nav a:hover, .menu nav button:hover { background:var(--bg); }
+    .menu nav a[aria-current="page"] { font-weight:600; }
+    .menu nav form { display:block; margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
   </style>
 </head>
 <body>
+<details class="menu">
+  <summary aria-label="Menu">
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </summary>
+  <nav>
+    <a href="/" aria-current="page">Ask</a>
+    <a href="/metrics">Metrics</a>
+    <form method="post" action="/logout"><button type="submit">Log out</button></form>
+  </nav>
+</details>
 <main>
-  <header>
-    <h1>wikiRAG</h1>
-    <form method="post" action="/logout"><button class="logout" type="submit">Log out</button></form>
-  </header>
+  <h1>wikiRAG</h1>
   <p class="sub">This is a toy RAG system designed to answer simple questions based on these select Wikipedia articles:</p>
   <ul id="articles" class="articles"></ul>
 
@@ -64,6 +82,11 @@
 </main>
 
 <script>
+  // Close the corner menu on an outside click or Escape.
+  const menu = document.querySelector(".menu");
+  document.addEventListener("click", (e) => { if (!menu.contains(e.target)) menu.open = false; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") menu.open = false; });
+
   // The indexed article list lives in app.py (indexed_articles).
   fetch("/api/articles")
     .then((res) => (res.ok ? res.json() : []))

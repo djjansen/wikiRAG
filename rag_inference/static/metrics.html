@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wikiRAG · Metrics</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#1d2330; --muted:#667085; --accent:#002f87; --border:#dde1e7; --err:#b42318;
+            --grid:#eceef2; --axis:#c3c8d1;
+            --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100;
+            --series-5:#e87ba4; --series-6:#008300; --series-7:#6250d6; --series-8:#e34948; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#12151b; --card:#1b1f27; --text:#e6e8ec; --muted:#98a2b3; --accent:#7aa2ff; --border:#2c323d; --err:#f97066;
+              --grid:#262b35; --axis:#3a414e;
+              --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500;
+              --series-5:#d55181; --series-6:#008300; --series-7:#9085e9; --series-8:#e66767; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 48px 16px; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .sub { margin: 0 0 24px; color: var(--muted); }
+    .card { position:relative; padding:20px; background:var(--card); border:1px solid var(--border); border-radius:10px; }
+    .label { font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    .error { color: var(--err); }
+    .status { color: var(--muted); }
+
+    .legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin:0 0 12px; padding:0; list-style:none; font-size:.9rem; }
+    .legend li { display:flex; align-items:center; gap:6px; }
+    .swatch { width:10px; height:10px; border-radius:3px; }
+    #chart svg { display:block; width:100%; height:auto; overflow:visible; }
+    #chart text { font:11px system-ui, -apple-system, "Segoe UI", sans-serif; fill:var(--muted); font-variant-numeric:tabular-nums; }
+    #chart text.value { fill:var(--text); }
+    #chart text.version { font-size:12px; fill:var(--text); }
+    .tooltip { position:absolute; pointer-events:none; padding:6px 10px; font-size:.85rem; line-height:1.4; white-space:nowrap;
+               background:var(--card); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgb(0 0 0 / .12); }
+    .tooltip .metric { display:flex; align-items:center; gap:6px; color:var(--muted); }
+    .tooltip strong { font-variant-numeric:tabular-nums; }
+
+    details.table { margin-top:16px; font-size:.9rem; }
+    details.table summary { cursor:pointer; color:var(--muted); }
+    table { width:100%; margin-top:8px; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    th, td { padding:6px 8px; text-align:right; border-top:1px solid var(--border); }
+    th:first-child, td:first-child { text-align:left; }
+    th { font-weight:600; color:var(--muted); }
+
+    /* Corner menu, shared with index.html */
+    .menu { position:fixed; top:16px; right:16px; z-index:10; }
+    .menu summary { list-style:none; display:grid; place-items:center; width:40px; height:40px; color:var(--muted);
+                    background:var(--card); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .menu summary::-webkit-details-marker { display:none; }
+    .menu summary:hover, .menu[open] summary { color:var(--text); }
+    .menu nav { position:absolute; top:46px; right:0; min-width:160px; padding:6px; background:var(--card);
+                border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgb(0 0 0 / .12); }
+    .menu nav a, .menu nav button { display:block; width:100%; padding:8px 10px; font:inherit; font-size:.95rem; font-weight:400;
+                                    text-align:left; color:var(--text); background:none; border:0; border-radius:6px; text-decoration:none; cursor:pointer; }
+    .menu nav a:hover, .menu nav button:hover { background:var(--bg); }
+    .menu nav a[aria-current="page"] { font-weight:600; }
+    .menu nav form { display:block; margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+<details class="menu">
+  <summary aria-label="Menu">
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </summary>
+  <nav>
+    <a href="/">Ask</a>
+    <a href="/metrics" aria-current="page">Metrics</a>
+    <form method="post" action="/logout"><button type="submit">Log out</button></form>
+  </nav>
+</details>
+<main>
+  <h1>Metrics</h1>
+  <p class="sub">Eval scores for each version of the RAG pipeline, from <code>rag_eval/run_eval.py</code>.</p>
+
+  <section class="card">
+    <div class="label">Score by version</div>
+    <p id="status" class="status">Loading…</p>
+    <ul id="legend" class="legend" hidden></ul>
+    <div id="chart"></div>
+    <div id="tooltip" class="tooltip" hidden></div>
+    <details id="table-view" class="table" hidden>
+      <summary>Show as table</summary>
+      <table id="table"></table>
+    </details>
+  </section>
+</main>
+
+<script>
+  const menu = document.querySelector(".menu");
+  document.addEventListener("click", (e) => { if (!menu.contains(e.target)) menu.open = false; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") menu.open = false; });
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const status = document.getElementById("status");
+  const chart = document.getElementById("chart");
+  const tooltip = document.getElementById("tooltip");
+  let data = null;
+
+  // Series colors in fixed order; a metric keeps its color however many there are.
+  const color = (i) => `var(--series-${(i % 8) + 1})`;
+  const titleCase = (s) => s.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  fetch("/api/metrics")
+    .then(async (res) => {
+      if (res.status === 401) return location.replace("/login");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `Request failed (${res.status})`);
+      if (!body.versions.length) {
+        status.textContent = "No eval results found yet.";
+        return;
+      }
+      data = body;
+      status.hidden = true;
+      renderLegend();
+      renderTable();
+      renderChart();
+      new ResizeObserver(renderChart).observe(chart);
+    })
+    .catch((err) => {
+      status.textContent = err.message;
+      status.classList.add("error");
+    });
+
+  function el(name, attrs = {}, parent) {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+
+  function renderLegend() {
+    const legend = document.getElementById("legend");
+    data.metrics.forEach((m, i) => {
+      const li = document.createElement("li");
+      const swatch = document.createElement("span");
+      swatch.className = "swatch";
+      swatch.style.background = color(i);
+      li.append(swatch, titleCase(m));
+      legend.appendChild(li);
+    });
+    legend.hidden = false;
+  }
+
+  function renderTable() {
+    const table = document.getElementById("table");
+    const head = table.insertRow();
+    for (const text of ["Version", ...data.metrics.map(titleCase)]) {
+      const th = document.createElement("th");
+      th.textContent = text;
+      head.appendChild(th);
+    }
+    for (const v of data.versions) {
+      const row = table.insertRow();
+      row.insertCell().textContent = v.version;
+      for (const m of data.metrics) row.insertCell().textContent = m in v.scores ? v.scores[m].toFixed(3) : "–";
+    }
+    document.getElementById("table-view").hidden = false;
+  }
+
+  // A column with a 4px rounded top and a square base.
+  function columnPath(x, y, w, base) {
+    const r = Math.min(4, w / 2, base - y);
+    return `M${x},${base}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${base}Z`;
+  }
+
+  function renderChart() {
+    if (!data) return;
+    const width = chart.clientWidth;
+    const height = 300;
+    const m = { top: 20, right: 4, bottom: 28, left: 36 };
+    const plotW = width - m.left - m.right;
+    const base = height - m.bottom;
+    const plotH = base - m.top;
+
+    // Scores are 0–1; widen the axis only if something lands above 1.
+    const max = Math.max(...data.versions.flatMap((v) => Object.values(v.scores)));
+    const yMax = max <= 1 ? 1 : Math.ceil(max);
+    const y = (val) => base - (Math.max(0, val) / yMax) * plotH;
+
+    const svg = el("svg", { viewBox: `0 0 ${width} ${height}`, role: "img",
+                            "aria-label": "Clustered column chart of eval scores by version" });
+
+    for (let i = 0; i <= 4; i++) {
+      const val = (yMax * i) / 4;
+      const ty = y(val);
+      el("line", { x1: m.left, x2: width - m.right, y1: ty, y2: ty,
+                   stroke: i === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+      el("text", { x: m.left - 8, y: ty, "text-anchor": "end", "dominant-baseline": "middle" }, svg)
+        .textContent = yMax === 1 ? val.toFixed(2) : String(+val.toFixed(2));
+    }
+
+    const n = data.metrics.length;
+    const band = plotW / data.versions.length;
+    const gap = 2;
+    const barW = Math.max(2, Math.min(24, (band * 0.75 - gap * (n - 1)) / n));
+    const clusterW = n * barW + gap * (n - 1);
+    // Value labels only where they fit over their column; the table and tooltip carry them otherwise.
+    const showValues = barW >= 22;
+
+    data.versions.forEach((v, vi) => {
+      const x0 = m.left + band * vi + (band - clusterW) / 2;
+      el("text", { class: "version", x: m.left + band * (vi + 0.5), y: base + 18, "text-anchor": "middle" }, svg)
+        .textContent = v.version;
+
+      data.metrics.forEach((metric, mi) => {
+        if (!(metric in v.scores)) return;
+        const val = v.scores[metric];
+        const x = x0 + mi * (barW + gap);
+        const top = y(val);
+        el("path", { d: columnPath(x, top, barW, base), fill: color(mi) }, svg);
+        if (showValues) {
+          el("text", { class: "value", x: x + barW / 2, y: top - 5, "text-anchor": "middle" }, svg)
+            .textContent = val.toFixed(2).replace(/^0/, "");
+        }
+        // Hit target: the full column slot, wider and taller than the mark itself.
+        const hit = el("rect", { x: x - gap / 2, y: m.top, width: barW + gap, height: plotH, fill: "transparent" }, svg);
+        hit.addEventListener("pointerenter", () => showTooltip(v.version, metric, mi, val, x + barW / 2, top));
+        hit.addEventListener("pointerleave", () => (tooltip.hidden = true));
+      });
+    });
+
+    chart.replaceChildren(svg);
+  }
+
+  function showTooltip(version, metric, mi, val, cx, top) {
+    tooltip.replaceChildren();
+    const head = document.createElement("div");
+    head.textContent = `Version ${version}`;
+    const row = document.createElement("div");
+    row.className = "metric";
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = color(mi);
+    const value = document.createElement("strong");
+    value.textContent = val.toFixed(3);
+    row.append(swatch, `${titleCase(metric)} `, value);
+    tooltip.append(head, row);
+    tooltip.hidden = false;
+
+    // Position over the column, relative to the card, clamped inside it.
+    const card = chart.offsetParent;
+    const left = chart.offsetLeft + cx - tooltip.offsetWidth / 2;
+    tooltip.style.left = `${Math.max(8, Math.min(left, card.clientWidth - tooltip.offsetWidth - 8))}px`;
+    tooltip.style.top = `${chart.offsetTop + top - tooltip.offsetHeight - 10}px`;
+  }
+</script>
+</body>
+</html>

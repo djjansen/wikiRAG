@@ -1,6 +1,8 @@
 """FastAPI backend: serves the frontend and a /api/ask endpoint backed by rag.ask()."""
+import csv
 import hashlib
 import hmac
+import io
 import logging
 import os
 from pathlib import Path
@@ -31,6 +33,10 @@ indexed_articles = ["https://en.wikipedia.org/wiki/2018_Iraqi_parliamentary_elec
                     "https://en.wikipedia.org/wiki/Peregrine_falcon",
                     "https://en.wikipedia.org/wiki/Transformer_(deep_learning)"
 ]
+
+# Eval results written by rag_eval/run_eval.py: one CSV per version, with a version column and one column per metric.
+EVAL_BUCKET = os.getenv("EVAL_BUCKET", "djj-wiki-rag")
+EVAL_PREFIX = os.getenv("EVAL_PREFIX", "eval/")
 
 if not APP_PASSWORD:
     log.warning("APP_PASSWORD is not set, so nobody can log in.")
@@ -78,6 +84,16 @@ class AskResponse(BaseModel):
 class Article(BaseModel):
     title: str
     url: str
+
+
+class VersionMetrics(BaseModel):
+    version: str
+    scores: dict[str, float]
+
+
+class MetricsResponse(BaseModel):
+    metrics: list[str]
+    versions: list[VersionMetrics]
 
 
 class LoginRequest(BaseModel):
@@ -139,6 +155,61 @@ def ask(req: AskRequest):
         log.exception("Bedrock query failed")
         raise HTTPException(status_code=502, detail="The knowledge base query failed. Check the server logs.")
     return AskResponse(question=question, **result)
+
+
+def version_key(version: str):
+    # Sort "1.10" after "1.9"; anything non-numeric sorts after the numbered versions.
+    try:
+        return (0, tuple(int(part) for part in version.split(".")), version)
+    except ValueError:
+        return (1, (), version)
+
+
+def load_eval_rows() -> list[dict[str, str]]:
+    s3 = rag._s3_client()
+    rows = []
+    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=EVAL_BUCKET, Prefix=EVAL_PREFIX):
+        for obj in page.get("Contents", []):
+            if obj["Key"].endswith(".csv"):
+                body = s3.get_object(Bucket=EVAL_BUCKET, Key=obj["Key"])["Body"].read().decode("utf-8-sig")
+                rows.extend(csv.DictReader(io.StringIO(body)))
+    return rows
+
+
+@app.get("/api/metrics", response_model=MetricsResponse)
+def metrics():
+    try:
+        rows = load_eval_rows()
+    except (ClientError, BotoCoreError):
+        log.exception("Reading eval results from S3 failed")
+        raise HTTPException(status_code=502, detail="Couldn't read the eval results. Check the server logs.")
+
+    # Metric columns are everything but version and the unnamed pandas index, in the order they first appear.
+    metric_names = []
+    versions = {}
+    for row in rows:
+        version = (row.get("version") or "").strip()
+        if not version:
+            continue
+        scores = versions.setdefault(version, {})
+        for name, value in row.items():
+            if not name or name == "version" or value in (None, ""):
+                continue
+            try:
+                scores[name] = float(value)
+            except ValueError:
+                continue
+            if name not in metric_names:
+                metric_names.append(name)
+    return MetricsResponse(
+        metrics=metric_names,
+        versions=[VersionMetrics(version=v, scores=versions[v]) for v in sorted(versions, key=version_key)],
+    )
+
+
+@app.get("/metrics")
+def metrics_page():
+    return FileResponse(STATIC_DIR / "metrics.html")
 
 
 @app.get("/")
